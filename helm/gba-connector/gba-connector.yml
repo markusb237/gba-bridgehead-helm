@@ -1,0 +1,14 @@
+ingress:
+  enabled: true
+  annotations:
+    #nginx.ingress.kubernetes.io/ssl-redirect: "false"
+    #nginx.ingress.kubernetes.io/proxy-connect-timeout: "120"
+    #nginx.ingress.kubernetes.io/proxy-send-timeout: "120"
+    #nginx.ingress.kubernetes.io/proxy-read-timeout: "120"
+    nginx.ingress.kubernetes.io/app-root: /login.xhtml
+  hosts:
+    - #hostname for connector
+  tls:
+    - secretName: #secretname
+      hosts:
+        - #hostname for connector

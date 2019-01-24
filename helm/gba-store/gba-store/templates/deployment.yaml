@@ -1,0 +1,83 @@
+apiVersion: apps/v1beta2
+kind: Deployment
+metadata:
+  name: {{ include "chart.fullname" . }}
+  labels:
+    app.kubernetes.io/name: {{ include "chart.name" . }}
+    helm.sh/chart: {{ include "chart.chart" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "chart.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ include "chart.name" . }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+      annotations:
+        prometheus.io/scrape: '{{ .Values.samply.enableMetrics }}'
+        prometheus.io/port: '9100'
+    spec:
+      containers:
+      - name: {{ .Chart.Name }}
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        env:
+        - name: MDR_URL
+          value: {{ .Values.samply.mdrUrl }}
+        - name: MDR_NAMESPACE
+          value: {{ .Values.samply.mdrNamespace }}
+        - name: MDR_MAP
+          value: {{ .Values.samply.mdrMap | quote }}
+        - name: MDR_VALIDATION
+          value: {{ .Values.samply.mdrValidation | quote }}
+        - name: POSTGRES_HOST
+          value: {{ template "postgresql.fullname" . }}
+        - name: POSTGRES_PORT
+          value: {{ .Values.postgresql.service.port | quote }}
+        - name: POSTGRES_DB
+          value: {{ .Values.postgresql.postgresqlDatabase }}
+        - name: POSTGRES_USER
+          value: {{ .Values.postgresql.postgresqlUsername }}
+        - name: POSTGRES_PASS
+          value: {{ .Values.postgresql.postgresqlPassword }}
+        - name: PROXY_URL
+          value: {{ .Values.samply.proxyUrl }}
+        - name: PROXY_USER
+          value: {{ .Values.samply.proxyUser }}
+        - name: PROXY_PASS
+          value: {{ .Values.samply.proxyPass }}
+        - name: CATALINA_OPTS
+          value: {{ .Values.samply.catalinaOpts }}
+        - name: ENABLE_METRICS
+          value: {{ .Values.samply.enableMetrics | quote }}
+        ports:
+        - name: http
+          containerPort: 8080
+          protocol: TCP
+        livenessProbe:
+          httpGet:
+            path: /gba-store/importXSD
+            port: http
+        readinessProbe:
+          httpGet:
+            path: /gba-store/importXSD
+            port: http
+        resources:
+  {{ toYaml .Values.resources | indent 12 }}
+  {{- with .Values.nodeSelector }}
+      nodeSelector:
+    {{ toYaml . | indent 8 }}
+    {{- end }}
+      {{- with .Values.affinity }}
+          affinity:
+        {{ toYaml . | indent 8 }}
+        {{- end }}
+          {{- with .Values.tolerations }}
+              tolerations:
+            {{ toYaml . | indent 8 }}
+            {{- end }}

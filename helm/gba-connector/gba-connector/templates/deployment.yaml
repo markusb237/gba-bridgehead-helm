@@ -1,0 +1,95 @@
+apiVersion: apps/v1beta2
+kind: Deployment
+metadata:
+  name: {{ include "chart.fullname" . }}
+  labels:
+    app.kubernetes.io/name: {{ include "chart.name" . }}
+    helm.sh/chart: {{ include "chart.chart" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "chart.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ include "chart.name" . }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+      annotations:
+        prometheus.io/scrape: '{{ .Values.connector.enableMetrics }}'
+        prometheus.io/port: '9100'
+    spec:
+      containers:
+      - name: {{ .Chart.Name }}
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        env:
+          - name: MDR_URL
+            value: {{ .Values.connector.mdrUrl }}
+          - name: HTTP_PROXY
+            value: {{ .Values.connector.proxyUrl }}
+          - name: PROXY_USER
+            value: {{ .Values.connector.proxyUser }}
+          - name: PROXY_PASS
+            value: {{ .Values.connector.proxyPass }}
+          - name: POSTGRES_HOST
+            value: {{ template "postgresql.fullname" . }}
+          - name: POSTGRES_PORT
+            value: {{ .Values.postgresql.service.port | quote }}
+          - name: POSTGRES_DB
+            value: {{ .Values.postgresql.postgresqlDatabase }}
+          - name: POSTGRES_USER
+            value: {{ .Values.postgresql.postgresqlUsername }}
+          - name: POSTGRES_PASS
+            value: {{ .Values.postgresql.postgresqlPassword }}
+          - name: STORE_URL
+            value: {{ .Values.connector.storeUrl }}
+          - name: CATALINA_OPTS
+            value: {{ .Values.connector.catalinaOpts }}
+          - name: OPERATOR_FIRST_NAME
+            value: {{ .Values.connector.operatorFirstName }}
+          - name: OPERATOR_LAST_NAME
+            value: {{ .Values.connector.operatorLastName }}
+          - name: OPERATOR_EMAIL
+            value: {{ .Values.connector.operatorEmail }}
+          - name: OPERATOR_PHONE
+            value: {{ .Values.connector.operatorPhone }}
+          - name: MAIL_HOST
+            value: {{ .Values.connector.mailHost }}
+          - name: MAIL_PORT
+            value: {{ .Values.connector.mailPort | quote }}
+          - name: MAIL_PROTOCOL
+            value: {{ .Values.connector.mailProtocol }}
+          - name: MAIL_FROM_ADDRESS
+            value: {{ .Values.connector.mailFromAddress }}
+          - name: MAIL_FROM_NAME
+            value: {{ .Values.connector.mailFromName }}
+        ports:
+        - name: http
+          containerPort: 8080
+          protocol: TCP
+        livenessProbe:
+          httpGet:
+            path: /login.xhtml
+            port: http
+        readinessProbe:
+          httpGet:
+            path: /login.xhtml
+            port: http
+        resources:
+  {{ toYaml .Values.resources | indent 12 }}
+  {{- with .Values.nodeSelector }}
+      nodeSelector:
+    {{ toYaml . | indent 8 }}
+    {{- end }}
+      {{- with .Values.affinity }}
+          affinity:
+        {{ toYaml . | indent 8 }}
+        {{- end }}
+          {{- with .Values.tolerations }}
+              tolerations:
+            {{ toYaml . | indent 8 }}
+            {{- end }}

@@ -1,0 +1,13 @@
+ingress:
+  enabled: true
+  annotations:
+    #nginx.ingress.kubernetes.io/ssl-redirect: "false"
+    #nginx.ingress.kubernetes.io/proxy-connect-timeout: "120"
+    #nginx.ingress.kubernetes.io/proxy-send-timeout: "120"
+    #nginx.ingress.kubernetes.io/proxy-read-timeout: "120"
+  hosts:
+    - #hostname for store
+  tls:
+    - secretName: #secret name
+      hosts:
+        - #hostname for store
